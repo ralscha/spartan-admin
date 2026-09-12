@@ -1,0 +1,10 @@
+artifacts/
+frontend/node_modules/
+frontend/dist/
+backend/spartan-admin
+backend/spartan-admin.exe
+*.log
+.pnpm-store
+.agents
+.codex
+.vscode

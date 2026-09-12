@@ -1,0 +1,229 @@
+version: '3'
+
+vars:
+  CLIENT_DIR: frontend
+  SERVER_DIR: backend
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  setup:
+    desc: Install frontend dependencies and download Go modules
+    deps:
+      - client:install
+      - server:download
+
+  dev:
+    desc: Start the Go API and Angular development server
+    deps:
+      - server:run
+      - client:start
+
+  preview:
+    desc: Build the frontend and serve it with the Go API
+    deps:
+      - client:build
+    dir: '{{.SERVER_DIR}}'
+    env:
+      SPARTAN_ADMIN_WEB_ROOT: ../frontend/dist/spartan-admin/browser
+    cmds:
+      - go run ./cmd/server
+
+  dogfood:
+    desc: Build and serve the application on port 18080 for dogfooding
+    deps:
+      - client:build
+    dir: '{{.SERVER_DIR}}'
+    env:
+      SPARTAN_ADMIN_ADDRESS: ':18080'
+      SPARTAN_ADMIN_WEB_ROOT: ../frontend/dist/spartan-admin/browser
+    cmds:
+      - go run ./cmd/server
+
+  verify:
+    desc: Run all frontend and backend quality checks
+    cmds:
+      - task: client:lint
+      - task: client:test
+      - task: client:build
+      - task: server:test
+      - task: server:vet
+      - task: server:verify-modules
+
+  test:
+    desc: Run frontend and backend tests
+    deps:
+      - client:test
+      - server:test
+
+  build:
+    desc: Build the Angular frontend and Go server
+    deps:
+      - client:build
+      - server:build
+
+  format:
+    desc: Format frontend and backend sources
+    deps:
+      - client:format
+      - server:format
+
+  clean:
+    desc: Remove generated frontend and backend build output
+    cmds:
+      - task: client:clean
+      - task: server:clean
+
+  client:install:
+    desc: Install frontend dependencies from the lockfile
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  client:start:
+    desc: Start the Angular development server
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm start
+
+  client:test:
+    desc: Run Angular unit tests with Vitest
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm test
+
+  client:test:watch:
+    desc: Run Angular unit tests in watch mode
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm run test:watch
+
+  client:lint:
+    desc: Lint the Angular frontend
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm run lint
+
+  client:build:
+    desc: Build and prerender the Angular frontend
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm run build
+
+  client:watch:
+    desc: Build the Angular frontend continuously
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm run watch
+
+  client:format:
+    desc: Format frontend files with Prettier
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm run format
+
+  client:audit:
+    desc: Audit production frontend dependencies
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - pnpm audit --prod
+
+  client:clean:
+    desc: Remove Angular build output
+    dir: '{{.CLIENT_DIR}}'
+    cmds:
+      - cmd: powershell -NoProfile -Command "if (Test-Path -LiteralPath 'dist') { Remove-Item -LiteralPath 'dist' -Recurse -Force }"
+        platforms: [windows]
+      - cmd: rm -rf ./dist
+        platforms: [linux, darwin]
+
+  server:download:
+    desc: Download Go module dependencies
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - go mod download
+
+  server:run:
+    desc: Start the Go API server
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - go run ./cmd/server
+
+  server:test:
+    desc: Run Go tests
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - go test ./...
+
+  server:vet:
+    desc: Run Go static analysis
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - go vet ./...
+
+  server:verify-modules:
+    desc: Verify downloaded Go modules
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - go mod verify
+
+  server:format:
+    desc: Format Go sources
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - go fmt ./...
+
+  server:tidy:
+    desc: Tidy and verify Go modules
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - go mod tidy -v
+      - go mod verify
+
+  server:build:
+    desc: Build the Go server binary
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - cmd: powershell -NoProfile -Command "New-Item -ItemType Directory -Force -Path 'bin' | Out-Null"
+        platforms: [windows]
+      - cmd: mkdir -p ./bin
+        platforms: [linux, darwin]
+      - go build -trimpath -ldflags="-s -w" -o ./bin/spartan-admin{{exeExt}} ./cmd/server
+
+  server:clean:
+    desc: Remove Go build output
+    dir: '{{.SERVER_DIR}}'
+    cmds:
+      - cmd: powershell -NoProfile -Command "if (Test-Path -LiteralPath 'bin') { Remove-Item -LiteralPath 'bin' -Recurse -Force }"
+        platforms: [windows]
+      - cmd: rm -rf ./bin
+        platforms: [linux, darwin]
+
+  docker:build:
+    desc: Build the combined application image
+    cmds:
+      - docker compose build
+
+  docker:up:
+    desc: Start the combined application container
+    cmds:
+      - docker compose up -d
+
+  docker:down:
+    desc: Stop the application container
+    cmds:
+      - docker compose down
+
+  docker:logs:
+    desc: Follow application container logs
+    cmds:
+      - docker compose logs -f
+
+  docker:config:
+    desc: Validate the Docker Compose configuration
+    cmds:
+      - docker compose config

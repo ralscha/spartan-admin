@@ -1,0 +1,9 @@
+services:
+  spartan-admin:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPARTAN_ADMIN_ADDRESS: ":8080"
+      SPARTAN_ADMIN_WEB_ROOT: "/app/public"
+    restart: unless-stopped
