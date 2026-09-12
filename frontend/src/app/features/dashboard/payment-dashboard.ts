@@ -570,12 +570,10 @@ export class PaymentDashboardPage {
   readonly notice = signal('');
   readonly visiblePaymentData = computed(() => PAYMENT_DATA.slice(-this.paymentRange()));
   readonly recentPayments = computed(() =>
-    (this.resource.value()?.transactions ?? [])
-      .slice(0, 6)
-      .map((payment) => ({
-        ...payment,
-        status: this.statusOverrides()[payment.id] ?? payment.status,
-      })),
+    (this.resource.value()?.transactions ?? []).slice(0, 6).map((payment) => ({
+      ...payment,
+      status: this.statusOverrides()[payment.id] ?? payment.status,
+    })),
   );
   asMetric(value: string): PaymentMetric {
     return value === 'transactions' ? 'transactions' : 'volume';
