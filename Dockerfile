@@ -1,6 +1,6 @@
 FROM node:26-alpine AS frontend
 WORKDIR /build/frontend
-RUN corepack enable
+RUN npm install --global pnpm@12.15.0
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
